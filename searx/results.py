@@ -79,6 +79,7 @@ class ResultContainer:
         self.on_result: t.Callable[[Result | LegacyResult], bool] = lambda _: True
         self._lock: RLock = RLock()
         self._main_results_sorted: list[MainResult | LegacyResult] = None  # type: ignore
+        self.query = None
 
     def extend(
         self, engine_name: str | None, results: list[Result | LegacyResult]
@@ -205,8 +206,24 @@ class ResultContainer:
             return self._main_results_sorted
 
         # first pass, sort results by "score" (descanding)
-        results = sorted(self.main_results_map.values(), key=lambda x: x.score, reverse=True)
+        if self.query:
+            from rank_bm25 import BM25Okapi
+            corpus = []
+            results_list = list(self.main_results_map.values())
+            for res in results_list:
+                text = f"{res.title} {res.content}".lower().split()
+                corpus.append(text)
 
+            bm25 = BM25Okapi(corpus)
+            tokenized_query = self.query.lower().split()
+            scores = bm25.get_scores(tokenized_query)
+
+            paired = sorted(zip(scores, results_list), key=lambda x: x[0], reverse=True)
+            results = [res for _, res in paired]
+
+            results = results[:20]   # <-- add this line
+        else:
+            results = sorted(self.main_results_map.values(), key=lambda x: x.score, reverse=True)
         # pass 2 : group results by category and template
         gresults: list[MainResult | LegacyResult] = []
         categoryPositions: dict[str, t.Any] = {}

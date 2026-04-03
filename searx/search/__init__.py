@@ -53,6 +53,7 @@ class Search:
         super().__init__()
         self.search_query: "SearchQuery" = search_query
         self.result_container: ResultContainer = ResultContainer()
+        self.result_container.query = search_query.query
         self.start_time: float | None = None
         self.actual_timeout: float | None = None
 
