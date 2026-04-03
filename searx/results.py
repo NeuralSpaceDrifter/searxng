@@ -224,6 +224,15 @@ class ResultContainer:
             results = results[:20]   # <-- add this line
         else:
             results = sorted(self.main_results_map.values(), key=lambda x: x.score, reverse=True)
+
+        seen = set()
+        unique_results = []
+        for res in results:
+            if res.url not in seen:
+                seen.add(res.url)
+                unique_results.append(res)
+        results = unique_results[:20]
+        
         # pass 2 : group results by category and template
         gresults: list[MainResult | LegacyResult] = []
         categoryPositions: dict[str, t.Any] = {}
