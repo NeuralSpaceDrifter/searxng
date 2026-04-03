@@ -27,6 +27,15 @@ brand:
   #   links:
   #     Uptime: https://uptime.searxng.org/history/darmarit-org
   #     About: "https://searxng.org"
+  # pwa_colors:
+  #   # Custom settings for PWA icon an colors used in manifest.json
+  #   # Default colors are:
+  #    theme_color_light: "#3050ff"
+  #    background_color_light: "fff"
+  #    theme_color_dark: "#58f"
+  #    background_color_dark: "#222428"
+  #    theme_color_black: "#3050ff"
+  #    background_color_black: "#000"
 
 search:
   # Filter results. 0: None, 1: Moderate, 2: Strict
@@ -411,6 +420,24 @@ engines:
     timeout: 6.0
     shortcut: conda
     disabled: true
+
+  - name: aol
+    engine: aol
+    search_type: search
+    categories: [general]
+    shortcut: aol
+
+  - name: aol images
+    engine: aol
+    search_type: image
+    categories: [images]
+    shortcut: aoli
+
+  - name: aol videos
+    engine: aol
+    search_type: video
+    categories: [videos]
+    shortcut: aolv
 
   - name: arch linux wiki
     engine: archlinux
@@ -1178,6 +1205,31 @@ engines:
     shortcut: js
     timeout: 3.0
     disabled: true
+
+  - name: karmasearch
+    engine: karmasearch
+    categories: [general, web]
+    search_type: web
+    shortcut: ka
+
+  - name: karmasearch images
+    engine: karmasearch
+    categories: [images, web]
+    search_type: images
+    shortcut: kai
+    paging: false
+
+  - name: karmasearch videos
+    engine: karmasearch
+    categories: [general, web]
+    search_type: videos
+    shortcut: kav
+
+  - name: karmasearch news
+    engine: karmasearch
+    categories: [news, web]
+    search_type: news
+    shortcut: kan
 
   - name: kickass
     engine: kickass
