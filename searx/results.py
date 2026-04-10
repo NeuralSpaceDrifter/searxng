@@ -207,21 +207,17 @@ class ResultContainer:
 
         # first pass, sort results by "score" (descanding)
         if self.query:
-            from rank_bm25 import BM25Okapi
-            corpus = []
             results_list = list(self.main_results_map.values())
-            for res in results_list:
-                text = f"{res.title} {res.content}".lower().split()
-                corpus.append(text)
-
-            bm25 = BM25Okapi(corpus)
-            tokenized_query = self.query.lower().split()
-            scores = bm25.get_scores(tokenized_query)
-
-            paired = sorted(zip(scores, results_list), key=lambda x: x[0], reverse=True)
-            results = [res for _, res in paired]
-
-            results = results[:20]   # <-- add this line
+            if not results_list:
+                results = []
+            else:
+                from rank_bm25 import BM25Okapi
+                corpus = [f"{r.title} {r.content}".lower().split() for r in results_list]
+                bm25 = BM25Okapi(corpus)
+                tokenized_query = self.query.lower().split()
+                scores = bm25.get_scores(tokenized_query)
+                paired = sorted(zip(scores, results_list), key=lambda x: x[0], reverse=True)
+                results = [res for _, res in paired][:20]
         else:
             results = sorted(self.main_results_map.values(), key=lambda x: x.score, reverse=True)
 
