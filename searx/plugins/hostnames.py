@@ -25,6 +25,16 @@ PluginStorage (it is not available for selection).
          - '(.*\\.)?facebook.com$'
          - ...
 
+- ``hostnames.remove_files``: A **list** of plain text files (one domain per line)
+  that will be converted to regex and removed.
+
+  .. code:: yaml
+
+     hostnames:
+       remove_files:
+         - /filter-list/ultimate.txt
+         - /filter-list/fake.txt
+
 - ``hostnames.high_priority``: A **list** of regular expressions for hostnames
   whose result should be given higher priority. The results from these hosts are
   arranged higher in the results list.
@@ -51,7 +61,7 @@ If the URL matches the pattern of ``high_priority`` AND ``low_priority``, the
 higher priority wins over the lower priority.
 
 Alternatively, you can also specify a file name for the **mappings** or
-**lists** to load these from an external file:
+**lists** to load these from an external YAML file:
 
 .. code:: yaml
 
@@ -156,7 +166,31 @@ class SXNGPlugin(Plugin):
         HIGH = self._load_regular_expressions("high_priority") or set()  # type: ignore
         LOW = self._load_regular_expressions("low_priority") or set()  # type: ignore
 
+        # New: load from 'remove_files' list of plain text files
+        remove_files = settings.get(self.id, {}).get("remove_files")
+        if remove_files and isinstance(remove_files, list):
+            file_patterns = self._load_text_file_patterns(remove_files)
+            REMOVE.update(file_patterns)
+
         return True
+
+    def _load_text_file_patterns(self, file_paths: list) -> set:
+        """Read each file (one domain per line), convert to regex, return set of compiled patterns."""
+        patterns = set()
+        for file_path in file_paths:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        # Convert plain domain to regex: (.*\.)?domain\.com$
+                        regex_str = r"(.*\.)?" + re.escape(line) + r"$"
+                        patterns.add(re.compile(regex_str, re.IGNORECASE))
+                log.info("Loaded %d patterns from %s", len(patterns), file_path)
+            except Exception as e:
+                log.error("Failed to load %s: %s", file_path, e)
+        return patterns
 
     def _load_regular_expressions(self, settings_key) -> dict[re.Pattern, str] | set | None:
         setting_value = settings.get(self.id, {}).get(settings_key)
