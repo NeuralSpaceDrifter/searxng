@@ -54,6 +54,12 @@ class Search:
         self.search_query: "SearchQuery" = search_query
         self.result_container: ResultContainer = ResultContainer()
         self.result_container.query = search_query.query
+        # --- PATCHED ---
+        # Tell the container which categories the user asked for, so that
+        # ResultContainer.get_ordered_results() can attribute multi-category
+        # engines to the right tab instead of always using categories[0].
+        self.result_container.categories = set(search_query.categories or ())
+        # --- /PATCHED ---
         self.start_time: float | None = None
         self.actual_timeout: float | None = None
 

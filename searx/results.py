@@ -80,6 +80,7 @@ class ResultContainer:
         self._lock: RLock = RLock()
         self._main_results_sorted: list[MainResult | LegacyResult] = None  # type: ignore
         self.query = None
+        self.categories: set[str] = set()
 
     def extend(
         self, engine_name: str | None, results: list[Result | LegacyResult]
@@ -237,10 +238,15 @@ class ResultContainer:
 
         for res in results:
             # do we need to handle more than one category per engine?
+            #I think this was causing issues, applying change
             engine = searx.engines.engines.get(res.engine or "")
             if engine:
-                res.category = engine.categories[0] if len(engine.categories) > 0 else ""
-
+                if not getattr(res, "category", None):
+                    match = self.categories & set(engine.categories)
+                    if match:
+                        res.category = next(iter(match))
+                    elif engine.categories:
+                        res.category = engine.categories[0]
             # do we need to handle more than one category per engine?
             category = f"{res.category}:{res.template}:{'img_src' if (res.thumbnail or res.img_src) else ''}"
             grp = categoryPositions.get(category)
