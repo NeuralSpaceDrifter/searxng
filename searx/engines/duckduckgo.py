@@ -164,6 +164,7 @@ Terms / phrases that you keep coming across:
    https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Language
 
 """
+
 # pylint: disable=global-statement
 
 import json
@@ -171,7 +172,6 @@ import re
 import typing as t
 
 import babel
-import lxml.html
 
 from searx import locales
 from searx.enginelib import EngineCache
@@ -203,6 +203,7 @@ about: dict[str, str | bool] = {
 categories: list[str] = ["general", "web"]
 paging: bool = True
 time_range_support: bool = True
+language_support = True
 safesearch: bool = True
 """DDG-lite: user can't select but the results are filtered."""
 
@@ -379,6 +380,12 @@ def request(query: str, params: "OnlineParams") -> None:
     # The vqd value is generated from the query and the UA header. To be able to
     # reuse the vqd value, the UA header must be static.
     headers["User-Agent"] = _HTTP_User_Agent
+
+    headers["Sec-Fetch-Dest"] = "document"
+    headers["Sec-Fetch-Mode"] = "navigate"
+    headers["Sec-Fetch-Site"] = "same-origin"
+    headers["Sec-Fetch-User"] = "?1"
+
     headers["Referer"] = "https://html.duckduckgo.com/"
 
     ui_lang = params["searxng_locale"]
@@ -462,7 +469,7 @@ def response(resp: "SXNG_Response") -> EngineResults:
     if resp.status_code == 303:
         return res
 
-    doc = lxml.html.fromstring(resp.text)
+    doc = resp.html()
     params = resp.search_params
 
     if is_ddg_captcha(doc):
@@ -503,12 +510,13 @@ def response(resp: "SXNG_Response") -> EngineResults:
         and "Your user agent:" not in zero_click
         and "URL Decoded:" not in zero_click
     ):
-        res.add(
-            res.types.Answer(
-                answer=zero_click,
-                url=eval_xpath_getindex(doc, '//div[@id="zero_click_abstract"]/a/@href', 0),
+        if zero_click_url := eval_xpath_getindex(doc, '//div[@id="zero_click_abstract"]/a/@href', 0, None):
+            res.add(
+                res.types.Answer(
+                    answer=zero_click,
+                    url=zero_click_url,
+                )
             )
-        )
     return res
 
 
